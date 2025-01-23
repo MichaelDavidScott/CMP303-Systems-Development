@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package SystemLogin;
+package Dashboards;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -128,7 +128,7 @@ public class LoginFrame extends javax.swing.JFrame {
         
         
         try{
-            String uName = txtUsername.getText().toLowerCase();
+            String uName = txtUsername.getText();
             char[] pWord = jPassword.getPassword();
             
             int id = 0;
@@ -136,9 +136,11 @@ public class LoginFrame extends javax.swing.JFrame {
             
             Connection con = GarageSystemDatabase.Connect();
             
-            String sql = "SELECT * from user WHERE (username = ? "
-                    + "AND password = ?)";//create an sql query, String
+            String sql = "SELECT StaffLoginID, username, password from staff_logins WHERE (username = ? "
+                    + "AND password = ?)";
             
+
+                    
             PreparedStatement ps = con.prepareStatement(sql);
             ps.setString(1, uName);
             ps.setString(2, new String(pWord));
@@ -148,21 +150,52 @@ public class LoginFrame extends javax.swing.JFrame {
             int count = 0;
             
             while(rs.next()){               
-                id = rs.getInt("id");
-                user = rs.getString("username");
+                id = rs.getInt("StaffLoginID");
+                user = rs.getString("Username");
+                
+                
                 System.out.println(id);
-                System.out.println(user);
-                System.out.println("Stage 2");        
+                System.out.println(user);     
                 count++;
             }
             if(count == 1){
-                JOptionPane.showMessageDialog(null,"Successful Login " + user + ", your id is: "+id);                   
-            }
+                JOptionPane.showMessageDialog(null,"Successful Login " + user);
+                
+                try{
+                    String detailsSQL = "SELECT staff_details.StaffDetailsID, staff_details.FirstName, staff_details.LastName, staff_roles.Role " +
+                    "FROM staff_details " +
+                    "JOIN staff_roles ON staff_details.StaffRoleID = staff_roles.StaffRoleID " +
+                    "WHERE staff_details.StaffLoginID = ?";
+
+                    PreparedStatement DetailsPS = con.prepareStatement(detailsSQL);
+                    DetailsPS.setInt(1, id);
+                    ResultSet detailsRS = DetailsPS.executeQuery();
+
+                    if (detailsRS.next()) {
+                        int userID = detailsRS.getInt("StaffDetailsID");
+                        String firstName = detailsRS.getString("FirstName");
+                        String lastName = detailsRS.getString("LastName");
+                        String role = detailsRS.getString("Role");
+
+                        this.dispose();
+                        Dashboards.MainDashboard mainDash = new MainDashboard(userID, firstName, lastName, role);
+                        mainDash.setVisible(true);
+                    }
+                    else{
+                    }
+                }
+                
+                catch (Exception e) {
+                    JOptionPane.showMessageDialog(null, "Error: " + e);
+                        }
+                }
+                //}
+//}
             else if (count > 1){
                 JOptionPane.showMessageDialog(null,"Duplicate Accounts found, please contact System Administrator");
             }
             else{
-                JOptionPane.showMessageDialog(null,"Invalid Username or Password Entered");
+                JOptionPane.showMessageDialog(null,"Invalid username or password entered");
             }
             
         }
@@ -177,9 +210,9 @@ public class LoginFrame extends javax.swing.JFrame {
         if (JOptionPane.showConfirmDialog(null, "Are you sure?", "WARNING",
             JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             System.exit(0);
-            // yes option
+            
         } else {
-            // no option
+            
     }
         
         
